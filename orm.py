@@ -1,3 +1,4 @@
+import sqlalchemy.engine.cursor
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import insert, update, select, delete
 from sqlalchemy import ForeignKey
@@ -38,7 +39,6 @@ class Tasks(Base):
     nextRun: Mapped[datetime.datetime | None]
     cycle: Mapped[datetime.timedelta | None]
     email: Mapped[str | None]
-    rid: Mapped[int | None]
 
 
 async def create_all():
@@ -53,10 +53,10 @@ async def remove_all():
 
 async def add_task(fromIp, toIp, nextRun, cycle, email):
     async with engine.begin() as conn:
-        await conn.execute(
-            insert(Tasks).values(fromIp=fromIp, toIp=toIp, ready=False, nextRun=nextRun, cycle=cycle, email=email,
-                                 rid=None)
+        result = await conn.execute(
+            insert(Tasks).values(fromIp=fromIp, toIp=toIp, ready=False, nextRun=nextRun, cycle=cycle, email=email)
         )
+        return result.inserted_primary_key[0]
 
 
 async def remove_task(tid):
@@ -129,10 +129,15 @@ async def select_reports():
 
 
 async def main():
-    # await remove_all()
-    # await create_all()
-    await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                   datetime.timedelta(days=1), 'test@mail.com')
+    await remove_all()
+    await create_all()
+    a1 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+                        datetime.timedelta(days=1), 'test@mail.com')
+    a2 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+                        datetime.timedelta(days=1), 'test@mail.com')
+    a3 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+                        datetime.timedelta(days=1), 'test@mail.com')
+    print(a1, a2, a3)
     print(await select_tasks())
     print(await select_reports())
     print(await get_tasks_by_need_run())
