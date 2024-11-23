@@ -20,6 +20,7 @@ class Base(DeclarativeBase):
 class Reports(Base):
     __tablename__ = 'reports'
     rid: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tid: Mapped[int]
     ip: Mapped[str]
     protocol: Mapped[str]
     port: Mapped[int]
@@ -37,7 +38,7 @@ class Tasks(Base):
     nextRun: Mapped[datetime.datetime | None]
     cycle: Mapped[datetime.timedelta | None]
     email: Mapped[str | None]
-    rid: Mapped[int | None] = mapped_column(ForeignKey('Reports.rid'), ondelete='CASCADE')
+    rid: Mapped[int | None]
 
 
 async def create_all():
@@ -72,17 +73,51 @@ async def complete_task(tid):
         )
 
 
-async def add_report(ip, protocol, port, cve, hazard, link):
+async def get_task(tid):
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Tasks).where(Tasks.tid == tid)
+        )
+        return result.first()
+
+
+async def update_task(tid, fromIp, toIp, ready, nextRun, cycle, email):
     async with engine.begin() as conn:
         await conn.execute(
-            insert(Reports).values(ip=ip, protocol=protocol, port=port, cve=cve, hazard=hazard, link=link)
+            update(Tasks).where(Tasks.tid == tid).values(fromIp=fromIp, toIp=toIp, ready=ready, nextRun=nextRun,
+                                                         cycle=cycle, email=email)
         )
+
+
+async def get_tasks_by_need_run():
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Tasks).where(Tasks.ready == False, Tasks.nextRun < datetime.datetime.now())
+        )
+        return result.first()
+
+
+async def add_report(tid, ip, protocol, port, cve, hazard, link):
+    async with engine.begin() as conn:
+        await conn.execute(
+            insert(Reports).values(tid=tid, ip=ip, protocol=protocol, port=port, cve=cve, hazard=hazard, link=link)
+        )
+
+
+async def get_reports_by_tid(tid):
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Reports).where(Reports.tid == tid)
+        )
+        return result.fetchall()
 
 
 async def main():
     await remove_all()
     await create_all()
-    await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now(), datetime.timedelta(days=1), 'test@mail.com')
+    await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+                   datetime.timedelta(days=1), 'test@mail.com')
+    print(await get_tasks_by_need_run())
 
 
 if __name__ == '__main__':
