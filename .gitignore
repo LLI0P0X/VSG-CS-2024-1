@@ -1,5 +1,6 @@
 /.idea/
 /.venv/
-secret.py
+/__pycache__
 *temp*
 /cves/
+*.json
