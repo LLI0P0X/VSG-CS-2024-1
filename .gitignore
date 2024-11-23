@@ -1,6 +1,8 @@
 /.idea/
 /.venv/
-secret.py
+/__pycache__
 *temp*
 /Normist/__pycache__
 /cves/
+*.json
+db.session
