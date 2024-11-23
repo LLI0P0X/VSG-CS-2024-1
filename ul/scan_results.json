@@ -70,7 +70,7 @@
         "product": "",
         "version": "",
         "script": {
-            "fingerprint-strings": "\n  DNSStatusRequestTCP, DNSVersionBindReqTCP, Help, Kerberos, LDAPSearchReq, LPDString, RPCCheck, SMBProgNeg, SSLSessionReq, TLSSessionReq, TerminalServerCookie, X11Probe: \n    HTTP/1.1 400 Bad Request\n    Connection: close\n  FourOhFourRequest, GetRequest, HTTPOptions, RTSPRequest: \n    HTTP/1.1 404 Not Found\n    Content-Length: 32\n    Content-Type: application/json\n    Date: Sat, 23 Nov 2024 16:01:08 GMT\n    Connection: close\n    {\"code\":0,\"message\":\"Not Found\"}"
+            "fingerprint-strings": "\n  DNSStatusRequestTCP, DNSVersionBindReqTCP, Help, Kerberos, LDAPSearchReq, LPDString, RPCCheck, SMBProgNeg, SSLSessionReq, TLSSessionReq, TerminalServerCookie, X11Probe: \n    HTTP/1.1 400 Bad Request\n    Connection: close\n  FourOhFourRequest, GetRequest, HTTPOptions, RTSPRequest: \n    HTTP/1.1 404 Not Found\n    Content-Length: 32\n    Content-Type: application/json\n    Date: Sat, 23 Nov 2024 16:45:17 GMT\n    Connection: close\n    {\"code\":0,\"message\":\"Not Found\"}"
         }
     },
     {
