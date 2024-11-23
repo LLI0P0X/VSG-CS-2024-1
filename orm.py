@@ -33,9 +33,11 @@ class Tasks(Base):
     tid: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     fromIp: Mapped[str]
     toIp: Mapped[str]
+    ready: Mapped[bool]
     nextRun: Mapped[datetime.datetime | None]
     cycle: Mapped[datetime.timedelta | None]
     email: Mapped[str | None]
+    rid: Mapped[int | None] = mapped_column(ForeignKey('Reports.rid'), ondelete='CASCADE')
 
 
 async def create_all():
@@ -51,7 +53,7 @@ async def remove_all():
 async def add_task(fromIp, toIp, nextRun, cycle, email):
     async with engine.begin() as conn:
         await conn.execute(
-            insert(Tasks).values(fromIp=fromIp, toIp=toIp, nextRun=nextRun, cycle=cycle, email=email)
+            insert(Tasks).values(fromIp=fromIp, toIp=toIp, ready=False, nextRun=nextRun, cycle=cycle, email=email, rid=None)
         )
 
 
