@@ -36,73 +36,76 @@ def main(page: ft.Page):
         except ValueError:
             return False
 
-    def add_ip_address(e):
-        ip_text = ip_input.value.strip()
-        if ip_text and validate_ip_address(ip_text):
-            ip_list.controls.append(ft.Text(ip_text))
-            ip_input.value = ""
-            ip_input.error_text = None
-
-            # Добавление IP-адреса в базу данных
-            conn, cur = get_db_connection()
-            if '/' in ip_text:
-                network = ipaddress.IPv4Network(ip_text, strict=False)
-                start_ip = str(network.network_address)
-                end_ip = str(network.broadcast_address)
-                asyncio.run(main(add_task(start_ip, end_ip, None, None)))
-                cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (start_ip, end_ip))
-            elif '-' in ip_text:
-                start, end = ip_text.split('-')
-                asyncio.run(main(add_task(start.strip(), end.strip(), None, None)))
-                cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (start.strip(), end.strip()))
-            else:
-                asyncio.run(main(add_task(ip_text, ip_text, None, None)))
-                cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (ip_text, ip_text))
-            conn.commit()
-        else:
-            ip_input.error_text = "Invalid IP address"
-        page.update()
-
-    def send_to_email_changed(e):
-        if send_to_email.value:
-            email_input.visible = True
-            submit_button.visible = True
-        else:
-            email_input.visible = False
-            submit_button.visible = False
-        page.update()
-
     def validate_email(email):
         pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
         return re.match(pattern, email) is not None
 
-    def submit_form(e):
+    def start_work(e):
+        ip_text = ip_input.value.strip()
         email = email_input.value.strip()
+
+        if not ip_text:
+            ip_input.error_text = "IP address is required"
+            page.update()
+            return
+
+        if not validate_ip_address(ip_text):
+            ip_input.error_text = "Invalid IP address"
+            page.update()
+            return
+
         if send_to_email.value and not validate_email(email):
             email_input.error_text = "Invalid email address"
             page.update()
-        else:
-            email_input.error_text = None
-            # Здесь можно добавить логику отправки данных на почту
-            print("IP Addresses:", [ip.value for ip in ip_list.controls])
-            if send_to_email.value:
-                print("Email:", email)
+            return
 
-            page.clean()
-            page.add(ft.Text("Data submitted successfully!"))
-            page.update()
+        ip_input.error_text = None
+        email_input.error_text = None
+
+        # Добавление IP-адреса в базу данных
+        conn, cur = get_db_connection()
+        if '/' in ip_text:
+            network = ipaddress.IPv4Network(ip_text, strict=False)
+            start_ip = str(network.network_address)
+            end_ip = str(network.broadcast_address)
+            asyncio.run(add_task(start_ip, end_ip, None, None, email))
+            cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (start_ip, end_ip))
+        elif '-' in ip_text:
+            start, end = ip_text.split('-')
+            asyncio.run(add_task(start.strip(), end.strip(), None, None, email))
+            cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (start.strip(), end.strip()))
+        else:
+            asyncio.run(add_task(ip_text, ip_text, None, None, email))
+            cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (ip_text, ip_text))
+        conn.commit()
+
+        ip_list.controls.append(ft.Text(ip_text))
+        ip_input.value = ""
+        page.update()
+
+        # page.clean()
+        # page.add(ft.Text("Data submitted successfully!"))
+        # page.update()
 
     ip_input = ft.TextField(label="Enter IP Address (single, range, or CIDR)", width=400)
-    add_button = ft.ElevatedButton("Add IP Address", on_click=add_ip_address)
+    add_button = ft.ElevatedButton("Запустить работу", on_click=start_work)
     ip_list = ft.Column()
-    send_to_email = ft.Checkbox(label="Send to email", on_change=send_to_email_changed)
+    send_to_email = ft.Checkbox(label="Send to email", on_change=lambda e: page.update())
     email_input = ft.TextField(label="Enter email", width=400, visible=False)
-    submit_button = ft.ElevatedButton("Submit", on_click=submit_form, visible=False)
+
+    def send_to_email_changed(e):
+        if send_to_email.value:
+            email_input.visible = True
+        else:
+            email_input.visible = False
+        page.update()
+
+    send_to_email.on_change = send_to_email_changed
 
     input_section = ft.Column(
         [
             ft.Row(
-                [ip_input, add_button],
+                [ip_input],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             ft.Row(
@@ -111,10 +114,6 @@ def main(page: ft.Page):
             ),
             ft.Row(
                 [send_to_email, email_input],
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            ft.Row(
-                [submit_button],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         ],
@@ -130,6 +129,10 @@ def main(page: ft.Page):
 
     page.add(
         input_section,
+        ft.Row(
+            [add_button],
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
         output_section
     )
 
