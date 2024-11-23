@@ -1,3 +1,5 @@
+import os.path
+
 import requests
 import json
 from bs4 import BeautifulSoup
@@ -30,12 +32,7 @@ d1 = data['ip'].replace('.', '_')
 
 response = requests.post('https://snipp.ru/tools/ip', headers=headers, data=data, verify=False)
 
-f = open('temp.html', 'w', encoding='utf-8')
-f.write(response.text)
-f.write(response.text)
-f.close()
-
-soup = BeautifulSoup(open("temp.html", "r", encoding="utf-8"), features="html.parser")  # html parser
+soup = BeautifulSoup(response.text, features="html.parser")  # html parser
 table = soup.find_all('table', {'class': "tbl tbl-1-pre tbl-2-pre"})
 data_list = []
 data = {}
@@ -51,9 +48,7 @@ for key in keys:
     data[key] = values.pop(0)
 
 # Запись данных в JSON файл
-with open(f'{d1}.json', 'w', encoding='utf-8') as json_file:
+with open(os.path.join('ipInfo', f'{d1}.json'), 'w', encoding='utf-8') as json_file:
     json.dump(data, json_file, ensure_ascii=False, indent=4)
 
 print("Данные успешно записаны в ip.json")
-
-
