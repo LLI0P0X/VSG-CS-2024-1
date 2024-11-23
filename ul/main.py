@@ -21,6 +21,6 @@ for i in range(begin, end + 1):
     # check if the port is opened or closed
     # so we will access only that information
     # in the dictionary
-    res = res['scan'][target]['tcp'][i]
+    res = res['scan'][target]['tcp'][i]['state']
 
-    print(f'port {i} is {" ".join(res)}.')
+    print(f'port {i} is {res}.')
