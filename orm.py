@@ -73,6 +73,14 @@ async def complete_task(tid):
         )
 
 
+async def get_ready_from_task(tid):
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Tasks).where(Tasks.tid == tid)
+        )
+        return result.first().ready
+
+
 async def get_task(tid):
     async with engine.begin() as conn:
         result = await conn.execute(
@@ -138,6 +146,7 @@ async def main():
     a3 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
                         datetime.timedelta(days=1), 'test@mail.com')
     print(a1, a2, a3)
+    print(await get_ready_from_task(a2))
     print(await select_tasks())
     print(await select_reports())
     print(await get_tasks_by_need_run())
