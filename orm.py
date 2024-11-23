@@ -53,7 +53,22 @@ async def remove_all():
 async def add_task(fromIp, toIp, nextRun, cycle, email):
     async with engine.begin() as conn:
         await conn.execute(
-            insert(Tasks).values(fromIp=fromIp, toIp=toIp, ready=False, nextRun=nextRun, cycle=cycle, email=email, rid=None)
+            insert(Tasks).values(fromIp=fromIp, toIp=toIp, ready=False, nextRun=nextRun, cycle=cycle, email=email,
+                                 rid=None)
+        )
+
+
+async def remove_task(tid):
+    async with engine.begin() as conn:
+        await conn.execute(
+            delete(Tasks).where(Tasks.tid == tid)
+        )
+
+
+async def complete_task(tid):
+    async with engine.begin() as conn:
+        await conn.execute(
+            update(Tasks).where(Tasks.tid == tid).values(ready=True)
         )
 
 
