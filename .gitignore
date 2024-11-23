@@ -4,3 +4,4 @@
 *temp*
 /cves/
 *.json
+db.session

@@ -112,11 +112,29 @@ async def get_reports_by_tid(tid):
         return result.fetchall()
 
 
+async def select_tasks():
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Tasks)
+        )
+        return result.fetchall()
+
+
+async def select_reports():
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Reports)
+        )
+        return result.fetchall()
+
+
 async def main():
-    await remove_all()
-    await create_all()
+    # await remove_all()
+    # await create_all()
     await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
                    datetime.timedelta(days=1), 'test@mail.com')
+    print(await select_tasks())
+    print(await select_reports())
     print(await get_tasks_by_need_run())
 
 
