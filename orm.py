@@ -56,6 +56,8 @@ async def remove_all():
 
 async def add_task(fromIp, toIp, ports: str = '', nextRun: datetime.datetime = datetime.datetime.now(),
                    cycle: datetime.timedelta | None = None, email: str | None = None, needPDF: bool | None = None):
+    if needPDF == False:
+        needPDF = None
     needEmail = None
     if email:
         needEmail = True
@@ -112,6 +114,36 @@ async def get_tasks_by_need_run():
             .order_by(Tasks.nextRun).limit(1)
         )
         return result.first()
+
+
+async def get_tasks_by_need_send():
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Tasks).where(Tasks.needEmail == True, Tasks.ready == True)
+        )
+        return result.first()
+
+
+async def complete_send_task(tid):
+    async with engine.begin() as conn:
+        await conn.execute(
+            update(Tasks).where(Tasks.tid == tid).values(needEmail=False)
+        )
+
+
+async def get_tasks_by_need_pdf():
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Tasks).where(Tasks.needPDF == True, Tasks.ready == True)
+        )
+        return result.first()
+
+
+async def complete_pdf_task(tid):
+    async with engine.begin() as conn:
+        await conn.execute(
+            update(Tasks).where(Tasks.tid == tid).values(needPDF=False)
+        )
 
 
 async def add_report(tid, ip, protocol, port, cve, hazard, link):
