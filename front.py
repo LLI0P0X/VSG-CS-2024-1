@@ -171,7 +171,7 @@ def main(page: ft.Page):
     Table = ft.DataTable(
                 columns=[
                     ft.DataColumn(ft.Text("IP")),
-                    ft.DataColumn(ft.Text("Название порта")),
+                    ft.DataColumn(ft.Text("Протокол")),
                     ft.DataColumn(ft.Text("Порт"), numeric=True),
                     ft.DataColumn(ft.Text("CVE")),
                     ft.DataColumn(ft.Text("Уровень опасности"), numeric=True),
