@@ -37,7 +37,7 @@ class Tasks(Base):
     toIp: Mapped[str]
     ports: Mapped[str | None]
     ready: Mapped[bool]
-    nextRun: Mapped[datetime.datetime | None]
+    nextRun: Mapped[datetime.datetime]
     cycle: Mapped[datetime.timedelta | None]
     email: Mapped[str | None]
 
@@ -143,18 +143,17 @@ async def select_reports():
 async def main():
     await remove_all()
     await create_all()
-    a1 = await add_task('138.201.80.190', '138.201.80.190', ports='80',
-                        nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                        cycle=datetime.timedelta(days=1), email='test@mail.com')
-    # a2 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
-    #                     datetime.timedelta(days=1), 'test@mail.com')
-    # a3 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
-    #                     datetime.timedelta(days=1), 'test@mail.com')
-    # print(a1, a2, a3)
-    # print(await get_ready_from_task(a2))
+    tid = await add_task('138.201.80.190', '138.201.80.190', ports='80',
+                         nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
+                         cycle=datetime.timedelta(days=1), email='test@mail.com')
+    print(await get_ready_from_task(tid))
     print(await select_tasks())
     print(await select_reports())
-    print(await get_tasks_by_need_run())
+    await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
+                     'https://vulners.com/cve/CVE-2019-11072')
+    await complete_task(tid)
+    print(await get_ready_from_task(tid))
+    print(await get_reports_by_tid(tid))
 
 
 if __name__ == '__main__':
