@@ -111,12 +111,12 @@ def main(page: ft.Page):
             network = ipaddress.IPv4Network(ip_text, strict=False)
             start_ip = str(network.network_address)
             end_ip = str(network.broadcast_address)
-            tid = asyncio.run(add_task(start_ip, end_ip, port, date, periodicity, email))
+            tid = asyncio.run(add_task(start_ip, end_ip, port, date, periodicity, email, send_to_pdf.value))
         elif '-' in ip_text:
             start, end = ip_text.split('-')
-            tid = asyncio.run(add_task(start.strip(), end.strip(), port, date, periodicity, email))
+            tid = asyncio.run(add_task(start.strip(), end.strip(), port, date, periodicity, email, send_to_pdf.value))
         else:
-            tid = asyncio.run(add_task(ip_text, ip_text, port, date, periodicity, email))
+            tid = asyncio.run(add_task(ip_text, ip_text, port, date, periodicity, email, send_to_pdf.value))
 
         output_list.controls.clear()
         message_success = f'{ip_text} добавлен в работу'
@@ -209,7 +209,6 @@ def main(page: ft.Page):
         page.update()
 
     send_to_email.on_change = send_to_email_changed
-    send_to_pdf.on_change =
     use_date.on_change = use_date_changed
     use_periodicity.on_change = use_periodicity_changed
     use_port.on_change = use_port_changed
