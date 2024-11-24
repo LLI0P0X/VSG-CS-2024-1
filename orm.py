@@ -131,11 +131,11 @@ async def select_reports():
 async def main():
     # await remove_all()
     # await create_all()
-    await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                   datetime.timedelta(days=1), 'test@mail.com')
+    # await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    #                datetime.timedelta(days=1), 'test@mail.com')
     print(await select_tasks())
     print(await select_reports())
-    print(await get_tasks_by_need_run())
+    # print(await get_tasks_by_need_run())
 
 
 if __name__ == '__main__':

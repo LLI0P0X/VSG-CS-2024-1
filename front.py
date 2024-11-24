@@ -5,20 +5,36 @@ import sqlite3
 import threading
 import asyncio
 from orm import add_task
-
-# Локальное хранилище потока для соединения с базой данных
-db_connection = threading.local()
-
-def get_db_connection():
-    if not hasattr(db_connection, 'conn'):
-        db_connection.conn = sqlite3.connect('Normist/ip_addresses.db')
-        db_connection.cur = db_connection.conn.cursor()
-        db_connection.conn.commit()
-    return db_connection.conn, db_connection.cur
+import datetime
 
 def main(page: ft.Page):
     page.title = "IP Address Input"
     page.vertical_alignment = ft.MainAxisAlignment.START
+
+    def parse_timedelta(time_str):
+        # Регулярное выражение для извлечения числа и единицы измерения
+        pattern = r'(\d+)([smhdw])'
+        match = re.match(pattern, time_str)
+
+        if not match:
+            raise ValueError("Неверный формат строки")
+
+        value = int(match.group(1))
+        unit = match.group(2)
+
+        # Создание timedelta на основе единицы измерения
+        if unit == 's':
+            return datetime.timedelta(seconds=value)
+        elif unit == 'm':
+            return datetime.timedelta(minutes=value)
+        elif unit == 'h':
+            return datetime.timedelta(hours=value)
+        elif unit == 'd':
+            return datetime.timedelta(days=value)
+        elif unit == 'w':
+            return datetime.timedelta(weeks=value)
+        else:
+            raise ValueError("Неизвестная единица измерения")
 
     def validate_ip_address(ip_text):
         try:
@@ -43,6 +59,13 @@ def main(page: ft.Page):
     def start_work(e):
         ip_text = ip_input.value.strip()
         email = email_input.value.strip()
+        date = date_input.value if use_date.value else None
+        # date = datetime.datetime.strptime('15-12-2024&00:00:00', '%d-%m-%Y&%H:%M:%S')
+        if date != None:
+            date = datetime.datetime.strptime(date, '%Y-%m-%d')
+        periodicity = periodicity_input.value if use_periodicity.value else None
+        if periodicity != None:
+            periodicity = parse_timedelta(periodicity)
 
         if not ip_text:
             ip_input.error_text = "IP address is required"
@@ -63,21 +86,16 @@ def main(page: ft.Page):
         email_input.error_text = None
 
         # Добавление IP-адреса в базу данных
-        conn, cur = get_db_connection()
         if '/' in ip_text:
             network = ipaddress.IPv4Network(ip_text, strict=False)
             start_ip = str(network.network_address)
             end_ip = str(network.broadcast_address)
-            asyncio.run(add_task(start_ip, end_ip, None, None, email))
-            cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (start_ip, end_ip))
+            asyncio.run(add_task(start_ip, end_ip, date, periodicity, email))
         elif '-' in ip_text:
             start, end = ip_text.split('-')
-            asyncio.run(add_task(start.strip(), end.strip(), None, None, email))
-            cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (start.strip(), end.strip()))
+            asyncio.run(add_task(start.strip(), end.strip(), date, periodicity, email))
         else:
-            asyncio.run(add_task(ip_text, ip_text, None, None, email))
-            cur.execute("INSERT INTO ip_addresses (ip_start, ip_end) VALUES (?, ?)", (ip_text, ip_text))
-        conn.commit()
+            asyncio.run(add_task(ip_text, ip_text, date, periodicity, email))
 
         ip_list.controls.append(ft.Text(ip_text))
         ip_input.value = ""
@@ -93,6 +111,12 @@ def main(page: ft.Page):
     send_to_email = ft.Checkbox(label="Send to email", on_change=lambda e: page.update())
     email_input = ft.TextField(label="Enter email", width=400, visible=False)
 
+    use_date = ft.Checkbox(label="Use date", on_change=lambda e: page.update())
+    date_input = ft.TextField(label="Enter date (YYYY-MM-DD)", width=400, visible=False)
+
+    use_periodicity = ft.Checkbox(label="Use periodicity", on_change=lambda e: page.update())
+    periodicity_input = ft.TextField(label="Enter periodicity (e.g., 1d, 1w)", width=400, visible=False)
+
     def send_to_email_changed(e):
         if send_to_email.value:
             email_input.visible = True
@@ -100,7 +124,23 @@ def main(page: ft.Page):
             email_input.visible = False
         page.update()
 
+    def use_date_changed(e):
+        if use_date.value:
+            date_input.visible = True
+        else:
+            date_input.visible = False
+        page.update()
+
+    def use_periodicity_changed(e):
+        if use_periodicity.value:
+            periodicity_input.visible = True
+        else:
+            periodicity_input.visible = False
+        page.update()
+
     send_to_email.on_change = send_to_email_changed
+    use_date.on_change = use_date_changed
+    use_periodicity.on_change = use_periodicity_changed
 
     input_section = ft.Column(
         [
@@ -114,6 +154,14 @@ def main(page: ft.Page):
             ),
             ft.Row(
                 [send_to_email, email_input],
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            ft.Row(
+                [use_date, date_input],
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            ft.Row(
+                [use_periodicity, periodicity_input],
                 alignment=ft.MainAxisAlignment.CENTER,
             )
         ],

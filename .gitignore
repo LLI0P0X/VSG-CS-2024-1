@@ -6,3 +6,4 @@
 /cves/
 *.json
 db.session
+Normist/secret.py
