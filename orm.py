@@ -35,6 +35,7 @@ class Tasks(Base):
     tid: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     fromIp: Mapped[str]
     toIp: Mapped[str]
+    ports: Mapped[str | None]
     ready: Mapped[bool]
     nextRun: Mapped[datetime.datetime | None]
     cycle: Mapped[datetime.timedelta | None]
@@ -51,10 +52,11 @@ async def remove_all():
         await conn.run_sync(Base.metadata.drop_all)
 
 
-async def add_task(fromIp, toIp, nextRun, cycle, email):
+async def add_task(fromIp, toIp, ports, nextRun, cycle, email):
     async with engine.begin() as conn:
         result = await conn.execute(
-            insert(Tasks).values(fromIp=fromIp, toIp=toIp, ready=False, nextRun=nextRun, cycle=cycle, email=email)
+            insert(Tasks).values(fromIp=fromIp, toIp=toIp, ports=ports, ready=False, nextRun=nextRun, cycle=cycle,
+                                 email=email)
         )
         return result.inserted_primary_key[0]
 
@@ -101,6 +103,7 @@ async def get_tasks_by_need_run():
     async with engine.begin() as conn:
         result = await conn.execute(
             select(Tasks).where(Tasks.ready == False, Tasks.nextRun < datetime.datetime.now())
+            .order_by(Tasks.nextRun).limit(1)
         )
         return result.first()
 
@@ -139,7 +142,7 @@ async def select_reports():
 async def main():
     await remove_all()
     await create_all()
-    a1 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    a1 = await add_task('138.201.80.190', '138.201.80.190', datetime.datetime.now() + datetime.timedelta(minutes=-1),
                         datetime.timedelta(days=1), 'test@mail.com')
     a2 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
                         datetime.timedelta(days=1), 'test@mail.com')
