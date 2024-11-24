@@ -2,11 +2,26 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.fonts import addMapping
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from pdfrw import PdfReader, PdfWriter, PageMerge
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from pdfrw import PdfReader, PdfWriter, PageMerge
 import os
 import asyncio
+
+from sqlalchemy.sql.base import elements
+
 import orm
 from myLogger import logger
 
+pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
 
 def create_pdf(filename, text):
     # Регистрируем шрифт с поддержкой кириллицы
@@ -29,18 +44,44 @@ def create_pdf(filename, text):
 
 async def cycle():
     while True:
-        task = await orm.get_tasks_by_need_pdf()
+        task = await orm.get_task_by_need_pdf()
         if task:
+            data = [['IP', 'Название порта', 'Порт', 'CVE', 'Уровень опасности', 'Ссылка на CVE']]
+            output_folder = 'PDFs'
+            filename = os.path.join(output_folder, f"report{task[0]}.pdf")
+            doc = SimpleDocTemplate(filename, pagesize=letter)
+            elements = []
             for report in await orm.get_reports_by_tid(task[0]):
                 logger.debug(report)
-            # Текст, который будет добавлен в PDF
-            text = "Привет, это пример текста в PDF-файле с русскими буквами!"
 
-            # Имя файла для сохранения
-            filename = os.path.join('PDFs', f"report{task[0]}.pdf")
+                tid = report[1]
+                data.append([])
+                for item in report[2:]:
+                    data[len(data) - 1].append(item)
 
+            # Создаем таблицу
+            table = Table(data)
+            style = TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, -1), 'DejaVuSans'),  # Используем шрифт с поддержкой кириллицы
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ])
+            table.setStyle(style)
+
+            table._argW[0] = 1.3 * inch  # Ширина первого столбца
+            table._argW[1] = 0.8 * inch  # Ширина второго столбца
+            table._argW[2] = 0.8 * inch  # Ширина третьего столбца
+            table._argW[3] = 1.7 * inch  # Ширина четвертого столбца
+            table._argW[4] = 0.8 * inch  # Ширина пятого столбца
+            table._argW[5] = 2.9 * inch  # Ширина шестого столбца
+
+            elements.append(table)
             # Создаем PDF-файл
-            create_pdf(filename, text)
+            doc.build(elements)
 
             logger.info(f"PDF файл '{filename}' успешно создан.")
             await orm.complete_pdf_task(task[0])
