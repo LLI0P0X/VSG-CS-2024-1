@@ -14,6 +14,10 @@
 
 `Не маленькие, сами разберетесь`
 
+4) Скачать скрипты для Nmap в папку `nmap/scripts/`
+
+`git clone https://github.com/vulnersCom/nmap-vulners.git`
+
 ## Инструкция по использованию
 
 Запустить scan.py и front.py
