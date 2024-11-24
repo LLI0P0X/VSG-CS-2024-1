@@ -12,7 +12,7 @@ async def scan_host(tid, ip, ports=None):
     if ports:
         args += ' -p ' + ports
     args += ' --unprivileged --script vulners.nse'
-    nm = nmap.PortScanner()
+    nm = nmap.PortScanner()  # TODO: разобраться в nmap.PortScannerAsync()
     logger.info('Запуск nmap ' + args + ' ' + ip)
     nm.scan(ip, arguments=args)
 

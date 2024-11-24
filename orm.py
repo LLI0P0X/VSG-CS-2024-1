@@ -40,6 +40,7 @@ class Tasks(Base):
     nextRun: Mapped[datetime.datetime]
     cycle: Mapped[datetime.timedelta | None]
     email: Mapped[str | None]
+    needPDF: Mapped[bool]
 
 
 async def create_all():
@@ -53,11 +54,11 @@ async def remove_all():
 
 
 async def add_task(fromIp, toIp, ports: str = '', nextRun: datetime.datetime = datetime.datetime.now(),
-                   cycle: datetime.timedelta | None = None, email: str | None = None):
+                   cycle: datetime.timedelta | None = None, email: str | None = None, needPDF: bool = False):
     async with engine.begin() as conn:
         result = await conn.execute(
             insert(Tasks).values(fromIp=fromIp, toIp=toIp, ports=ports, ready=False, nextRun=nextRun, cycle=cycle,
-                                 email=email)
+                                 email=email, needPDF=needPDF)
         )
         return result.inserted_primary_key[0]
 
@@ -143,17 +144,22 @@ async def select_reports():
 async def main():
     await remove_all()
     await create_all()
-    tid = await add_task('138.201.80.190', '138.201.80.190', ports='80',
+    tid = await add_task('138.201.80.190', '138.201.80.191', ports='80',
                          nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                         cycle=datetime.timedelta(days=1), email='test@mail.com')
+                         cycle=datetime.timedelta(days=1), email='test@mail.com', needPDF=True)
     print(await get_ready_from_task(tid))
-    print(await select_tasks())
-    print(await select_reports())
-    await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
-                     'https://vulners.com/cve/CVE-2019-11072')
-    await complete_task(tid)
-    print(await get_ready_from_task(tid))
-    print(await get_reports_by_tid(tid))
+    # _select = await select_tasks()
+    # tid = _select[-1][0]
+    # await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
+    #                  'https://vulners.com/cve/CVE-2019-11072')
+    # await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
+    #                  'https://vulners.com/cve/CVE-2019-11072')
+    # await complete_task(tid)
+    # print(await get_ready_from_task(tid))
+    # print(await get_reports_by_tid(tid))
+    #
+    # print(await select_tasks())
+    # print(await select_reports())
 
 
 if __name__ == '__main__':
