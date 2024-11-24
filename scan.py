@@ -40,11 +40,12 @@ async def scan_host(tid, ip, ports=None):
 
 async def cycle():
     while True:
-        task = await orm.get_tasks_by_need_run()
+        task = await orm.get_task_by_need_run()
 
         if not task:
-            logger.info('Хочу спать')
-            await asyncio.sleep(1)
+            logger.debug('Хочу спать')
+            await orm.update_next_run_task()
+            await asyncio.sleep(3)
             continue
 
         start = ipaddress.IPv4Address(task.fromIp)

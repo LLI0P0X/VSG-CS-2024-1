@@ -69,6 +69,18 @@ async def add_task(fromIp, toIp, ports: str = '', nextRun: datetime.datetime = d
         return result.inserted_primary_key[0]
 
 
+async def update_next_run_task():
+    async with engine.begin() as conn:
+        result = await conn.execute(
+            select(Tasks).where(Tasks.ready == True, Tasks.needPDF != True,
+                                Tasks.needEmail != True)
+        )
+        for task in result.fetchall():
+            await conn.execute(update(Tasks).where(Tasks.tid == task.tid).values(nextRun=task.nextRun + task.cycle,
+                                                                                 needPDF=None if task.needPDF is None else True,
+                                                                                 needEmail=None if task.needEmail is None else True))
+
+
 async def remove_task(tid):
     async with engine.begin() as conn:
         await conn.execute(
@@ -107,7 +119,7 @@ async def update_task(tid, fromIp, toIp, ready, nextRun, cycle, email):
         )
 
 
-async def get_tasks_by_need_run():
+async def get_task_by_need_run():
     async with engine.begin() as conn:
         result = await conn.execute(
             select(Tasks).where(Tasks.ready == False, Tasks.nextRun < datetime.datetime.now())
@@ -116,10 +128,10 @@ async def get_tasks_by_need_run():
         return result.first()
 
 
-async def get_tasks_by_need_send():
+async def get_task_by_need_send():
     async with engine.begin() as conn:
         result = await conn.execute(
-            select(Tasks).where(Tasks.needEmail == True, Tasks.ready == True)
+            select(Tasks).where(Tasks.needEmail == True, Tasks.ready == True).order_by(Tasks.nextRun).limit(1)
         )
         return result.first()
 
@@ -131,10 +143,10 @@ async def complete_send_task(tid):
         )
 
 
-async def get_tasks_by_need_pdf():
+async def get_task_by_need_pdf():
     async with engine.begin() as conn:
         result = await conn.execute(
-            select(Tasks).where(Tasks.needPDF == True, Tasks.ready == True)
+            select(Tasks).where(Tasks.needPDF == True, Tasks.ready == True).order_by(Tasks.nextRun).limit(1)
         )
         return result.first()
 
@@ -149,7 +161,8 @@ async def complete_pdf_task(tid):
 async def add_report(tid, ip, protocol, port, cve, hazard, link):
     async with engine.begin() as conn:
         await conn.execute(
-            insert(Reports).values(tid=tid, ip=ip, protocol=protocol, port=port, cve=cve, hazard=hazard, link=link)
+            insert(Reports).values(tid=tid, ip=ip, protocol=protocol, port=port, cve=cve, hazard=hazard,
+                                   link=link)
         )
 
 
@@ -182,7 +195,7 @@ async def main():
     await create_all()
     tid = await add_task('138.201.80.190', '138.201.80.191', ports='80',
                          nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                         cycle=datetime.timedelta(days=1), email='test@mail.com', needPDF=True)
+                         cycle=datetime.timedelta(days=1), email='normist@yandex.ru', needPDF=True)
     print(await get_ready_from_task(tid))
     _select = await select_tasks()
     tid = _select[-1][0]
@@ -194,8 +207,13 @@ async def main():
     print(await get_ready_from_task(tid))
     print(await get_reports_by_tid(tid))
 
+    await complete_send_task(tid)
+    await complete_pdf_task(tid)
+    print('----text cycle----')
     print(await select_tasks())
-    print(await select_reports())
+    await update_next_run_task()
+    print(await select_tasks())
+    # print(await select_reports())
 
 
 if __name__ == '__main__':

@@ -3,12 +3,16 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+import asyncio
+
 import os
+from secret import from_email  # Замените на ваш email
+from secret import password  # Замените на ваш пароль
+import orm
+from myLogger import logger
+
 
 def send_email(subject, body, to_email, attachment_path):
-    from secret import from_email  # Замените на ваш email
-    from secret import password  # Замените на ваш пароль
-
     # Создаем сообщение
     msg = MIMEMultipart()
     msg['From'] = from_email
@@ -42,14 +46,36 @@ def send_email(subject, body, to_email, attachment_path):
         server.sendmail(from_email, to_email, msg.as_string())
 
 
-if __name__ == '__main__':
-    # Отправляем PDF по электронной почте
-    subject = "Пример PDF-файла"
-    body = "Привет! В этом письме прикреплен PDF-файл с текстом на русском языке."
-    emails = ["normist@yandex.ru"]  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Здесь добавлять емаилы
-    for email in emails:
-        to_email = email  # Замените на email получателя
+async def cycle():
+    while True:
+        task = await orm.get_task_by_need_send()
+        if task:
+            for report in await orm.get_reports_by_tid(task[0]):
+                logger.debug(report)
 
-        send_email(subject, body, to_email, filename)
+            # Отправляем PDF по электронной почте
+            filename = os.path.join('PDFs', f"report{task[0]}.pdf")
+            subject = "Пример PDF-файла"
+            body = "Привет! В этом письме прикреплен PDF-файл с текстом на русском языке."
 
-        print(f"PDF файл '{filename}' успешно отправлен на почту {to_email}.")
+            to_email = task[7]  # Замените на email получателя
+
+            send_email(subject, body, to_email, filename)
+
+            logger.info(f"PDF файл '{filename}' успешно отправлен на почту {to_email}.")
+            await orm.complete_send_task(task[0])
+        else:
+            await asyncio.sleep(5)
+            logger.debug("Нет задач для SMTP")
+
+
+def main():
+    logger.info("SMTP цикл запущен")
+    try:
+        asyncio.run(cycle())
+    except KeyboardInterrupt:
+        logger.info("SMTP цикл остановлен")
+
+
+if __name__ == "__main__":
+    main()
