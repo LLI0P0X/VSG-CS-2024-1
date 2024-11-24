@@ -178,24 +178,24 @@ async def select_reports():
 
 
 async def main():
-    await remove_all()
-    await create_all()
-    tid = await add_task('138.201.80.190', '138.201.80.191', ports='80',
-                         nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                         cycle=datetime.timedelta(days=1), email='test@mail.com', needPDF=None)
-    print(await get_ready_from_task(tid))
-    # _select = await select_tasks()
-    # tid = _select[-1][0]
+    # await remove_all()
+    # await create_all()
+    # tid = await add_task('138.201.80.190', '138.201.80.191', ports='80',
+    #                      nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    #                      cycle=datetime.timedelta(days=1), email='test@mail.com', needPDF=None)
+    # print(await get_ready_from_task(tid))
+    _select = await select_tasks()
+    tid = _select[-1][0]
     # await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
     #                  'https://vulners.com/cve/CVE-2019-11072')
     # await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
     #                  'https://vulners.com/cve/CVE-2019-11072')
     # await complete_task(tid)
-    # print(await get_ready_from_task(tid))
-    # print(await get_reports_by_tid(tid))
-    #
-    # print(await select_tasks())
-    # print(await select_reports())
+    print(await get_ready_from_task(tid))
+    print(await get_reports_by_tid(tid))
+
+    print(await select_tasks())
+    print(await select_reports())
 
 
 if __name__ == '__main__':

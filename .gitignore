@@ -2,7 +2,9 @@
 /.venv/
 /__pycache__
 *temp*
+/Normist/__pycache__
 /cves/
 *.json
 *.log
 db.session
+Normist/secret.py
