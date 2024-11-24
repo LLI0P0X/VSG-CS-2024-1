@@ -7,5 +7,6 @@
 *.json
 *.log
 *.pdf
-db.session
-Normist/secret.py
+/db.session
+/Normist/secret.py
+/secret.py
