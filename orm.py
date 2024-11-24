@@ -82,7 +82,9 @@ async def update_next_run_task():
                 update(Tasks).where(Tasks.tid == task.tid).values(ready=False, nextRun=task.nextRun + task.cycle,
                                                                   needPDF=None if task.needPDF is None else True,
                                                                   needEmail=None if task.needEmail is None else True))
-            await remove_reports_by_tid(task.tid)
+            await conn.execute(
+                delete(Reports).where(Reports.tid == task.tid)
+            )
             logger.debug(f"Время для {task.tid} обновлено на {task.nextRun + task.cycle}")
 
 
