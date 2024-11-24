@@ -8,6 +8,8 @@ import asyncio
 import datetime
 import os
 
+from myLogger import logger
+
 engine = create_async_engine(
     url=f"sqlite+aiosqlite:///{os.path.join(os.path.dirname(__file__), 'db.session')}",
     echo=False,
@@ -73,12 +75,14 @@ async def update_next_run_task():
     async with engine.begin() as conn:
         result = await conn.execute(
             select(Tasks).where(Tasks.ready == True, Tasks.needPDF != True,
-                                Tasks.needEmail != True)
+                                Tasks.needEmail != True, Tasks.cycle)
         )
         for task in result.fetchall():
-            await conn.execute(update(Tasks).where(Tasks.tid == task.tid).values(nextRun=task.nextRun + task.cycle,
-                                                                                 needPDF=None if task.needPDF is None else True,
-                                                                                 needEmail=None if task.needEmail is None else True))
+            await conn.execute(
+                update(Tasks).where(Tasks.tid == task.tid).values(ready=False, nextRun=task.nextRun + task.cycle,
+                                                                  needPDF=None if task.needPDF is None else True,
+                                                                  needEmail=None if task.needEmail is None else True))
+            logger.debug(f"Время для {task.tid} обновлено на {task.nextRun + task.cycle}")
 
 
 async def remove_task(tid):
@@ -131,7 +135,8 @@ async def get_task_by_need_run():
 async def get_task_by_need_send():
     async with engine.begin() as conn:
         result = await conn.execute(
-            select(Tasks).where(Tasks.needEmail == True, Tasks.ready == True).order_by(Tasks.nextRun).limit(1)
+            select(Tasks).where(Tasks.needEmail == True, Tasks.ready == True, Tasks.needPDF != True).order_by(
+                Tasks.nextRun).limit(1)
         )
         return result.first()
 
@@ -193,26 +198,26 @@ async def select_reports():
 async def main():
     await remove_all()
     await create_all()
-    tid = await add_task('138.201.80.190', '138.201.80.191', ports='80',
-                         nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                         cycle=datetime.timedelta(days=1), email='normist@yandex.ru', needPDF=True)
-    print(await get_ready_from_task(tid))
-    _select = await select_tasks()
-    tid = _select[-1][0]
-    await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
-                     'https://vulners.com/cve/CVE-2019-11072')
-    await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
-                     'https://vulners.com/cve/CVE-2019-11072')
-    await complete_task(tid)
-    print(await get_ready_from_task(tid))
-    print(await get_reports_by_tid(tid))
+    # tid = await add_task('138.201.80.190', '138.201.80.191', ports='80',
+    #                      nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    #                      cycle=datetime.timedelta(days=1), email='normist@yandex.ru', needPDF=True)
+    # print(await get_ready_from_task(tid))
+    # _select = await select_tasks()
+    # tid = _select[-1][0]
+    # await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
+    #                  'https://vulners.com/cve/CVE-2019-11072')
+    # await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
+    #                  'https://vulners.com/cve/CVE-2019-11072')
+    # await complete_task(tid)
+    # print(await get_ready_from_task(tid))
+    # print(await get_reports_by_tid(tid))
 
-    await complete_send_task(tid)
-    await complete_pdf_task(tid)
-    print('----text cycle----')
-    print(await select_tasks())
-    await update_next_run_task()
-    print(await select_tasks())
+    # await complete_send_task(tid)
+    # await complete_pdf_task(tid)
+    # print('----text cycle----')
+    # print(await select_tasks())
+    # await update_next_run_task()
+    # print(await select_tasks())
     # print(await select_reports())
 
 

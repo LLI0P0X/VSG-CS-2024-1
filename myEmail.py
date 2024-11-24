@@ -11,7 +11,6 @@ from secret import password  # Замените на ваш пароль
 import orm
 from myLogger import logger
 
-
 def send_email(subject, body, to_email, attachment_path):
     # Создаем сообщение
     msg = MIMEMultipart()
@@ -50,16 +49,27 @@ async def cycle():
     while True:
         task = await orm.get_task_by_need_send()
         if task:
-            for report in await orm.get_reports_by_tid(task[0]):
-                logger.debug(report)
 
             # Отправляем PDF по электронной почте
             filename = os.path.join('PDFs', f"report{task[0]}.pdf")
-            subject = "Пример PDF-файла"
-            body = "Привет! В этом письме прикреплен PDF-файл с текстом на русском языке."
+            subject = f"Отчет безопасности по задаче {task[0]}"
+
+            reports = await orm.get_reports_by_tid(task[0])
+
+            if len(reports) == 0:
+                body = f"Уязвимостей по адресам {task[1]}-{task[2]} не найдено."
+
+            else:
+                body = f"Уязвимости по адресам {task[1]}-{task[2]}: \n"
+                for report in reports:
+                    body += f"\nip: {report[2]}\n"
+                    body += f"Протокол: {report[3]}\n"
+                    body += f"Порт: {report[4]}\n"
+                    body += f"Код уязвимости: {report[5]}\n"
+                    body += f"Опасность: {report[6]}\n"
+                    body += f"Подробности: {report[7]}\n"
 
             to_email = task[7]  # Замените на email получателя
-
             send_email(subject, body, to_email, filename)
 
             logger.info(f"PDF файл '{filename}' успешно отправлен на почту {to_email}.")

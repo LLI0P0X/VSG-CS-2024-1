@@ -4,6 +4,7 @@ import asyncio
 import orm
 
 from myLogger import logger
+import myEmail, PDF
 
 
 async def scan_host(tid, ip, ports=None):
@@ -59,10 +60,14 @@ async def cycle():
         await orm.complete_task(task.tid)
 
 
+async def all():
+    await asyncio.gather(cycle(), PDF.cycle(), myEmail.cycle())
+
 def main():
     logger.info('Запуск цикла сканирований')
     try:
-        asyncio.run(cycle())
+        asyncio.run(all())
+        # asyncio.run(cycle())
     except KeyboardInterrupt:
         logger.info('Завершение цикла')
 
