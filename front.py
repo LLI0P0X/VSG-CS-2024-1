@@ -1,3 +1,5 @@
+from time import sleep
+
 import flet as ft
 import re
 import ipaddress
@@ -6,7 +8,7 @@ import threading
 import asyncio
 import datetime
 
-from orm import add_task
+from orm import add_task, get_ready_from_task, get_reports_by_tid
 
 def main(page: ft.Page):
     page.title = "IP Address Input"
@@ -111,17 +113,28 @@ def main(page: ft.Page):
             network = ipaddress.IPv4Network(ip_text, strict=False)
             start_ip = str(network.network_address)
             end_ip = str(network.broadcast_address)
-            asyncio.run(add_task(start_ip, end_ip, port, date, periodicity, email))
+            tid = asyncio.run(add_task(start_ip, end_ip, port, date, periodicity, email))
         elif '-' in ip_text:
             start, end = ip_text.split('-')
-            asyncio.run(add_task(start.strip(), end.strip(), port, date, periodicity, email))
+            tid = asyncio.run(add_task(start.strip(), end.strip(), port, date, periodicity, email))
         else:
-            asyncio.run(add_task(ip_text, ip_text, port, date, periodicity, email))
+            tid = asyncio.run(add_task(ip_text, ip_text, port, date, periodicity, email))
 
-        ip_list.controls.clear()
         message_success = f'{ip_text} добавлен в работу'
-        ip_list.controls.append(ft.Text(message_success))
+        output_list.controls.append(ft.Text(message_success))
+
         ip_input.value = ""
+        page.update()
+
+        while asyncio.run(get_ready_from_task(tid)) == False:
+            sleep(1)
+
+        data = get_reports_by_tid(tid)
+        for item in data:
+            output_data.controls.append(ft.Text(item))
+
+    def clear_output(e):
+        output_list.controls.clear()
         page.update()
 
     ip_input = ft.TextField(label="Enter IP Address (single, range, or CIDR)", width=400)
@@ -138,6 +151,10 @@ def main(page: ft.Page):
 
     use_port = ft.Checkbox(label="Use port", on_change=lambda e: page.update())
     port_input = ft.TextField(label="Enter port", width=400, visible=False)
+
+    output_list = ft.ListView(expand=True, spacing=10, padding=20)
+    output_data = ft.ListView(expand=True, spacing=10, padding=20)
+    clear_button = ft.ElevatedButton("Очистить вывод", on_click=clear_output)
 
     def send_to_email_changed(e):
         if send_to_email.value:
@@ -197,13 +214,18 @@ def main(page: ft.Page):
         ],
         alignment=ft.MainAxisAlignment.CENTER,
     )
-
     output_section = ft.Column(
         [
-            ft.Text("Output will be displayed here after submission.")
+            ft.Row(
+                [clear_button],
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            output_list,
+            output_data
         ],
         alignment=ft.MainAxisAlignment.CENTER,
     )
+
 
     page.add(
         input_section,
@@ -213,5 +235,6 @@ def main(page: ft.Page):
         ),
         output_section
     )
+
 
 ft.app(target=main)

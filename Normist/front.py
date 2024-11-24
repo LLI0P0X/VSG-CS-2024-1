@@ -1,12 +1,10 @@
 import flet as ft
 import re
 import ipaddress
-import sqlite3
-import threading
 import asyncio
+import datetime
 
 from orm import add_task
-import datetime
 
 def main(page: ft.Page):
     page.title = "IP Address Input"
@@ -57,16 +55,30 @@ def main(page: ft.Page):
         pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
         return re.match(pattern, email) is not None
 
+    def validate_port(port):
+        try:
+            port_num = int(port)
+            if 1 <= port_num <= 65535:
+                return True
+            else:
+                return False
+        except ValueError:
+            return False
+
     def start_work(e):
         ip_text = ip_input.value.strip()
         email = email_input.value.strip()
+        if email == '':
+            email = None
         date = date_input.value if use_date.value else None
-        # date = datetime.datetime.strptime('15-12-2024&00:00:00', '%d-%m-%Y&%H:%M:%S')
         if date != None:
             date = datetime.datetime.strptime(date, '%Y-%m-%d')
+        if date == None:
+            date = datetime.datetime.now()
         periodicity = periodicity_input.value if use_periodicity.value else None
         if periodicity != None:
             periodicity = parse_timedelta(periodicity)
+        port = port_input.value.strip() if use_port.value else None
 
         if not ip_text:
             ip_input.error_text = "IP address is required"
@@ -83,20 +95,26 @@ def main(page: ft.Page):
             page.update()
             return
 
+        if use_port.value and not validate_port(port):
+            port_input.error_text = "Invalid port number"
+            page.update()
+            return
+
         ip_input.error_text = None
         email_input.error_text = None
+        port_input.error_text = None
 
         # Добавление IP-адреса в базу данных
         if '/' in ip_text:
             network = ipaddress.IPv4Network(ip_text, strict=False)
             start_ip = str(network.network_address)
             end_ip = str(network.broadcast_address)
-            asyncio.run(add_task(start_ip, end_ip, date, periodicity, email))
+            asyncio.run(add_task(start_ip, end_ip, port, date, periodicity, email))
         elif '-' in ip_text:
             start, end = ip_text.split('-')
-            asyncio.run(add_task(start.strip(), end.strip(), date, periodicity, email))
+            asyncio.run(add_task(start.strip(), end.strip(), port, date, periodicity, email))
         else:
-            asyncio.run(add_task(ip_text, ip_text, date, periodicity, email))
+            asyncio.run(add_task(ip_text, ip_text, port, date, periodicity, email))
 
         ip_list.controls.clear()
         message_success = f'{ip_text} добавлен в работу'
@@ -115,6 +133,9 @@ def main(page: ft.Page):
 
     use_periodicity = ft.Checkbox(label="Use periodicity", on_change=lambda e: page.update())
     periodicity_input = ft.TextField(label="Enter periodicity (e.g., 1d, 1w)", width=400, visible=False)
+
+    use_port = ft.Checkbox(label="Use port", on_change=lambda e: page.update())
+    port_input = ft.TextField(label="Enter port", width=400, visible=False)
 
     def send_to_email_changed(e):
         if send_to_email.value:
@@ -137,14 +158,22 @@ def main(page: ft.Page):
             periodicity_input.visible = False
         page.update()
 
+    def use_port_changed(e):
+        if use_port.value:
+            port_input.visible = True
+        else:
+            port_input.visible = False
+        page.update()
+
     send_to_email.on_change = send_to_email_changed
     use_date.on_change = use_date_changed
     use_periodicity.on_change = use_periodicity_changed
+    use_port.on_change = use_port_changed
 
     input_section = ft.Column(
         [
             ft.Row(
-                [ip_input],
+                [ip_input, port_input, use_port],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             ft.Row(
