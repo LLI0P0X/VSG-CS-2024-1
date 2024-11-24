@@ -40,7 +40,8 @@ class Tasks(Base):
     nextRun: Mapped[datetime.datetime]
     cycle: Mapped[datetime.timedelta | None]
     email: Mapped[str | None]
-    needPDF: Mapped[bool]
+    needPDF: Mapped[bool | None]
+    needEmail: Mapped[bool | None]
 
 
 async def create_all():
@@ -54,11 +55,14 @@ async def remove_all():
 
 
 async def add_task(fromIp, toIp, ports: str = '', nextRun: datetime.datetime = datetime.datetime.now(),
-                   cycle: datetime.timedelta | None = None, email: str | None = None, needPDF: bool = False):
+                   cycle: datetime.timedelta | None = None, email: str | None = None, needPDF: bool | None = None):
+    needEmail = None
+    if email:
+        needEmail = True
     async with engine.begin() as conn:
         result = await conn.execute(
             insert(Tasks).values(fromIp=fromIp, toIp=toIp, ports=ports, ready=False, nextRun=nextRun, cycle=cycle,
-                                 email=email, needPDF=needPDF)
+                                 email=email, needPDF=needPDF, needEmail=needEmail)
         )
         return result.inserted_primary_key[0]
 
@@ -146,7 +150,7 @@ async def main():
     await create_all()
     tid = await add_task('138.201.80.190', '138.201.80.191', ports='80',
                          nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                         cycle=datetime.timedelta(days=1), email='test@mail.com', needPDF=True)
+                         cycle=datetime.timedelta(days=1), email='test@mail.com', needPDF=None)
     print(await get_ready_from_task(tid))
     # _select = await select_tasks()
     # tid = _select[-1][0]
