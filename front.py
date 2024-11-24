@@ -70,9 +70,13 @@ def main(page: ft.Page):
     def start_work(e):
         ip_text = ip_input.value.strip()
         email = email_input.value.strip()
+        if email == '':
+            email = None
         date = date_input.value if use_date.value else None
         if date != None:
             date = datetime.datetime.strptime(date, '%Y-%m-%d')
+        if date == None:
+            date = datetime.datetime.now()
         periodicity = periodicity_input.value if use_periodicity.value else None
         if periodicity != None:
             periodicity = parse_timedelta(periodicity)

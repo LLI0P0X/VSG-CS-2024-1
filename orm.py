@@ -141,11 +141,11 @@ async def select_reports():
 
 
 async def main():
-    await remove_all()
-    await create_all()
-    a1 = await add_task('138.201.80.190', '138.201.80.190', ports='80',
-                        nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                        cycle=datetime.timedelta(days=1), email='test@mail.com')
+    # await remove_all()
+    # await create_all()
+    # a1 = await add_task('138.201.80.190', '138.201.80.190', ports='80',
+    #                     nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    #                     cycle=datetime.timedelta(days=1), email='test@mail.com')
     # a2 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
     #                     datetime.timedelta(days=1), 'test@mail.com')
     # a3 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
