@@ -11,7 +11,8 @@ from secret import password  # Замените на ваш пароль
 import orm
 from myLogger import logger
 
-def send_email(subject, body, to_email, attachment_path):
+
+def send_email(subject, body, to_email, attachment_path=None):
     # Создаем сообщение
     msg = MIMEMultipart()
     msg['From'] = from_email
@@ -30,13 +31,13 @@ def send_email(subject, body, to_email, attachment_path):
     encoders.encode_base64(part)
 
     # Добавляем заголовок к вложению
-    part.add_header(
-        'Content-Disposition',
-        f'attachment; filename= {os.path.basename(attachment_path)}',
-    )
-
-    # Добавляем вложение к сообщению
-    msg.attach(part)
+    if attachment_path:
+        part.add_header(
+            'Content-Disposition',
+            f'attachment; filename= {os.path.basename(attachment_path)}',
+        )
+        # Добавляем вложение к сообщению
+        msg.attach(part)
 
     # Отправляем письмо
     with smtplib.SMTP('smtp.mail.ru', 587) as server:  # Замените на ваш SMTP сервер и порт
@@ -70,9 +71,12 @@ async def cycle():
                     body += f"Подробности: {report[7]}\n"
 
             to_email = task[7]  # Замените на email получателя
-            send_email(subject, body, to_email, filename)
-
-            logger.info(f"PDF файл '{filename}' успешно отправлен на почту {to_email}.")
+            if f'report{task[0]}.pdf' in os.listdir('PDFs'):
+                send_email(subject, body, to_email, filename)
+                logger.info(f"PDF файл '{filename}' успешно отправлен на почту {to_email}.")
+            else:
+                send_email(subject, body, to_email)
+                logger.info('Отчет успешно отправлен на почту {to_email}.')
             await orm.complete_send_task(task[0])
         else:
             await asyncio.sleep(5)
