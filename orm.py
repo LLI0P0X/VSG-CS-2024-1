@@ -141,14 +141,15 @@ async def select_reports():
 
 
 async def main():
-    await remove_all()
-    await create_all()
-    tid = await add_task('138.201.80.190', '138.201.80.190', ports='80',
-                         nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                         cycle=datetime.timedelta(days=1), email='test@mail.com')
-    print(await get_ready_from_task(tid))
+    # await remove_all()
+    # await create_all()
+    # tid = await add_task('138.201.80.190', '138.201.80.190', ports='80',
+    #                      nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    #                      cycle=datetime.timedelta(days=1), email='test@mail.com')
+    # print(await get_ready_from_task(tid))
     print(await select_tasks())
     print(await select_reports())
+    tid = 28
     await add_report(tid, '138.201.80.190', 'tcp', 80, 'CVE-2019-11072', '9.8',
                      'https://vulners.com/cve/CVE-2019-11072')
     await complete_task(tid)

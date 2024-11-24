@@ -3,8 +3,6 @@ from time import sleep
 import flet as ft
 import re
 import ipaddress
-import sqlite3
-import threading
 import asyncio
 import datetime
 
@@ -120,6 +118,7 @@ def main(page: ft.Page):
         else:
             tid = asyncio.run(add_task(ip_text, ip_text, port, date, periodicity, email))
 
+        output_list.controls.clear()
         message_success = f'{ip_text} добавлен в работу'
         output_list.controls.append(ft.Text(message_success))
 
@@ -129,18 +128,28 @@ def main(page: ft.Page):
         while asyncio.run(get_ready_from_task(tid)) == False:
             sleep(1)
 
-        data = get_reports_by_tid(tid)
+        data = asyncio.run(get_reports_by_tid(tid))
+
         for item in data:
-            output_data.controls.append(ft.Text(item))
+            Cells = []
+            for item2 in item[2:]:
+                Cells.append(ft.DataCell(ft.Text(item2)))
+            Rows.append(ft.DataRow(cells=Cells))
+            page.update()
+
+        page.update()
 
     def clear_output(e):
         output_list.controls.clear()
+        Table.rows = []
+        Table.update()
         page.update()
 
     ip_input = ft.TextField(label="Enter IP Address (single, range, or CIDR)", width=400)
     add_button = ft.ElevatedButton("Запустить работу", on_click=start_work)
     ip_list = ft.Column()
     send_to_email = ft.Checkbox(label="Send to email", on_change=lambda e: page.update())
+    send_to_pdf = ft.Checkbox(label="Send pdf to local", on_change=lambda e: page.update())
     email_input = ft.TextField(label="Enter email", width=400, visible=False)
 
     use_date = ft.Checkbox(label="Use date", on_change=lambda e: page.update())
@@ -156,12 +165,27 @@ def main(page: ft.Page):
     output_data = ft.ListView(expand=True, spacing=10, padding=20)
     clear_button = ft.ElevatedButton("Очистить вывод", on_click=clear_output)
 
+    Rows = []
+    Table = ft.DataTable(
+                columns=[
+                    ft.DataColumn(ft.Text("IP")),
+                    ft.DataColumn(ft.Text("Название порта")),
+                    ft.DataColumn(ft.Text("Порт"), numeric=True),
+                    ft.DataColumn(ft.Text("CVE")),
+                    ft.DataColumn(ft.Text("Уровень опасности"), numeric=True),
+                    ft.DataColumn(ft.Text("Ссылка на CVE")),
+                ],
+                rows=Rows
+            )
+
+
     def send_to_email_changed(e):
         if send_to_email.value:
             email_input.visible = True
         else:
             email_input.visible = False
         page.update()
+
 
     def use_date_changed(e):
         if use_date.value:
@@ -185,6 +209,7 @@ def main(page: ft.Page):
         page.update()
 
     send_to_email.on_change = send_to_email_changed
+    send_to_pdf.on_change =
     use_date.on_change = use_date_changed
     use_periodicity.on_change = use_periodicity_changed
     use_port.on_change = use_port_changed
@@ -196,21 +221,13 @@ def main(page: ft.Page):
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             ft.Row(
-                [ip_list],
+                [send_to_email, email_input, send_to_pdf],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             ft.Row(
-                [send_to_email, email_input],
+                [use_date, date_input, use_periodicity, periodicity_input],
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
-            ft.Row(
-                [use_date, date_input],
-                alignment=ft.MainAxisAlignment.CENTER,
-            ),
-            ft.Row(
-                [use_periodicity, periodicity_input],
-                alignment=ft.MainAxisAlignment.CENTER,
-            )
         ],
         alignment=ft.MainAxisAlignment.CENTER,
     )
@@ -221,11 +238,13 @@ def main(page: ft.Page):
                 alignment=ft.MainAxisAlignment.CENTER,
             ),
             output_list,
-            output_data
+            output_data,
+            Table
         ],
         alignment=ft.MainAxisAlignment.CENTER,
+        height=480,
+        scroll=ft.ScrollMode.ALWAYS,
     )
-
 
     page.add(
         input_section,
@@ -233,7 +252,8 @@ def main(page: ft.Page):
             [add_button],
             alignment=ft.MainAxisAlignment.CENTER,
         ),
-        output_section
+        output_section,
+
     )
 
 
