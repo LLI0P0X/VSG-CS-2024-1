@@ -4,6 +4,7 @@ import ipaddress
 import sqlite3
 import threading
 import asyncio
+
 from orm import add_task
 import datetime
 
@@ -97,13 +98,11 @@ def main(page: ft.Page):
         else:
             asyncio.run(add_task(ip_text, ip_text, date, periodicity, email))
 
-        ip_list.controls.append(ft.Text(ip_text))
+        ip_list.controls.clear()
+        message_success = f'{ip_text} добавлен в работу'
+        ip_list.controls.append(ft.Text(message_success))
         ip_input.value = ""
         page.update()
-
-        # page.clean()
-        # page.add(ft.Text("Data submitted successfully!"))
-        # page.update()
 
     ip_input = ft.TextField(label="Enter IP Address (single, range, or CIDR)", width=400)
     add_button = ft.ElevatedButton("Запустить работу", on_click=start_work)
