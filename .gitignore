@@ -6,5 +6,6 @@
 /cves/
 *.json
 *.log
+*.pdf
 db.session
 Normist/secret.py

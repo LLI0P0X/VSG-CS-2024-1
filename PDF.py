@@ -30,9 +30,8 @@ def create_pdf(filename, text):
 
 
 def send_email(subject, body, to_email, attachment_path):
-    from secret import from_email # Замените на ваш email
-    from secret import password # Замените на ваш пароль
-
+    from secret import from_email  # Замените на ваш email
+    from secret import password  # Замените на ваш пароль
 
     # Создаем сообщение
     msg = MIMEMultipart()
@@ -72,7 +71,7 @@ if __name__ == "__main__":
     text = "Привет, это пример текста в PDF-файле с русскими буквами!"
 
     # Имя файла для сохранения
-    filename = "example_russian.pdf"
+    filename = os.path.join('PDFs', "example_russian.pdf")
 
     # Создаем PDF-файл
     create_pdf(filename, text)
@@ -82,7 +81,7 @@ if __name__ == "__main__":
     # Отправляем PDF по электронной почте
     subject = "Пример PDF-файла"
     body = "Привет! В этом письме прикреплен PDF-файл с текстом на русском языке."
-    emails = ["normist@yandex.ru"] # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Здесь добавлять емаилы
+    emails = ["normist@yandex.ru"]  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< Здесь добавлять емаилы
     for email in emails:
         to_email = email  # Замените на email получателя
 
