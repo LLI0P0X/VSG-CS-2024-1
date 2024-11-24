@@ -129,19 +129,21 @@ def main(page: ft.Page):
             sleep(1)
 
         data = asyncio.run(get_reports_by_tid(tid))
+        print(data)
 
         for item in data:
             Cells = []
             for item2 in item[2:]:
                 Cells.append(ft.DataCell(ft.Text(item2)))
             Rows.append(ft.DataRow(cells=Cells))
+            Table.update()
             page.update()
 
         page.update()
 
     def clear_output(e):
         output_list.controls.clear()
-        Table.rows = []
+        Table.rows.clear()
         Table.update()
         page.update()
 

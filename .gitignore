@@ -8,5 +8,6 @@
 *.log
 *.pdf
 /db.session
-/Normist/secret.py
 /secret.py
+/secret.py
+/nmap
