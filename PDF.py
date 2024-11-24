@@ -1,15 +1,10 @@
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from reportlab.lib.pagesizes import letter
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib.fonts import addMapping
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from pdfrw import PdfReader, PdfWriter, PageMerge
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from pdfrw import PdfReader, PdfWriter, PageMerge
@@ -46,11 +41,18 @@ async def cycle():
     while True:
         task = await orm.get_task_by_need_pdf()
         if task:
-            data = [['IP', 'Название порта', 'Порт', 'CVE', 'Уровень опасности', 'Ссылка на CVE']]
+            data = [['IP', 'Протокол', 'Порт', 'CVE', 'Опасность', 'Ссылка на CVE']]
             output_folder = 'PDFs'
             filename = os.path.join(output_folder, f"report{task[0]}.pdf")
             doc = SimpleDocTemplate(filename, pagesize=letter)
             elements = []
+
+            styles = getSampleStyleSheet()
+            header_style = styles['Heading1']
+            header_style.alignment = 1
+            header_style.fontName = 'DejaVuSans'  # Используем шрифт с поддержкой кириллицы
+            header = Paragraph(f"Отчет о безопасности по адресам {task[1]}-{task[2]}", header_style)
+            elements.append(header)
             for report in await orm.get_reports_by_tid(task[0]):
                 logger.debug(report)
 
