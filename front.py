@@ -83,22 +83,22 @@ def main(page: ft.Page):
         port = port_input.value.strip() if use_port.value else None
 
         if not ip_text:
-            ip_input.error_text = "IP address is required"
+            ip_input.error_text = "Необходим IP-адрес"
             page.update()
             return
 
         if not validate_ip_address(ip_text):
-            ip_input.error_text = "Invalid IP address"
+            ip_input.error_text = "Неверный IP-адрес"
             page.update()
             return
 
         if send_to_email.value and not validate_email(email):
-            email_input.error_text = "Invalid email address"
+            email_input.error_text = "Неверный адрес электронной почты"
             page.update()
             return
 
         if use_port.value and not validate_port(port):
-            port_input.error_text = "Invalid port number"
+            port_input.error_text = "Недопустимый номер порта"
             page.update()
             return
 
@@ -145,21 +145,21 @@ def main(page: ft.Page):
         Table.update()
         page.update()
 
-    ip_input = ft.TextField(label="Enter IP Address (single, range, or CIDR)", width=400)
-    add_button = ft.ElevatedButton("Запустить работу", on_click=start_work)
+    ip_input = ft.TextField(label="Введите IP-адрес (один, диапозон или CIDR)", width=400)
+    add_button = ft.ElevatedButton("Добавить в работу", on_click=start_work)
     ip_list = ft.Column()
-    send_to_email = ft.Checkbox(label="Send to email", on_change=lambda e: page.update())
-    send_to_pdf = ft.Checkbox(label="Send pdf to local", on_change=lambda e: page.update())
-    email_input = ft.TextField(label="Enter email", width=400, visible=False)
+    send_to_email = ft.Checkbox(label="Отправить по электронной почте", on_change=lambda e: page.update())
+    send_to_pdf = ft.Checkbox(label="Отправить pdf в локальное хранилище", on_change=lambda e: page.update())
+    email_input = ft.TextField(label="Введите электронную почту", width=400, visible=False)
 
-    use_date = ft.Checkbox(label="Use date", on_change=lambda e: page.update())
-    date_input = ft.TextField(label="Enter date (YYYY-MM-DD)", width=400, visible=False)
+    use_date = ft.Checkbox(label="Дата запуска", on_change=lambda e: page.update())
+    date_input = ft.TextField(label="Введите дату (YYYY-MM-DD)", width=400, visible=False)
 
-    use_periodicity = ft.Checkbox(label="Use periodicity", on_change=lambda e: page.update())
-    periodicity_input = ft.TextField(label="Enter periodicity (e.g., 1d, 1w)", width=400, visible=False)
+    use_periodicity = ft.Checkbox(label="Период запуска", on_change=lambda e: page.update())
+    periodicity_input = ft.TextField(label="Введите период (например, 1d, 1w, 1y)", width=400, visible=False)
 
-    use_port = ft.Checkbox(label="Use port", on_change=lambda e: page.update())
-    port_input = ft.TextField(label="Enter port", width=400, visible=False)
+    use_port = ft.Checkbox(label="Порт", on_change=lambda e: page.update())
+    port_input = ft.TextField(label="Введите порт", width=400, visible=False)
 
     output_list = ft.ListView(expand=True, spacing=10, padding=20)
     output_data = ft.ListView(expand=True, spacing=10, padding=20)
