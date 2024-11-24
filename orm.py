@@ -52,7 +52,8 @@ async def remove_all():
         await conn.run_sync(Base.metadata.drop_all)
 
 
-async def add_task(fromIp, toIp, ports, nextRun, cycle, email):
+async def add_task(fromIp, toIp, ports: str = '', nextRun: datetime.datetime = datetime.datetime.now(),
+                   cycle: datetime.timedelta | None = None, email: str | None = None):
     async with engine.begin() as conn:
         result = await conn.execute(
             insert(Tasks).values(fromIp=fromIp, toIp=toIp, ports=ports, ready=False, nextRun=nextRun, cycle=cycle,
@@ -142,14 +143,15 @@ async def select_reports():
 async def main():
     await remove_all()
     await create_all()
-    a1 = await add_task('138.201.80.190', '138.201.80.190', datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                        datetime.timedelta(days=1), 'test@mail.com')
-    a2 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                        datetime.timedelta(days=1), 'test@mail.com')
-    a3 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
-                        datetime.timedelta(days=1), 'test@mail.com')
-    print(a1, a2, a3)
-    print(await get_ready_from_task(a2))
+    a1 = await add_task('138.201.80.190', '138.201.80.190', ports='80',
+                        nextRun=datetime.datetime.now() + datetime.timedelta(minutes=-1),
+                        cycle=datetime.timedelta(days=1), email='test@mail.com')
+    # a2 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    #                     datetime.timedelta(days=1), 'test@mail.com')
+    # a3 = await add_task('127.0.0.1', '127.0.0.2', datetime.datetime.now() + datetime.timedelta(minutes=-1),
+    #                     datetime.timedelta(days=1), 'test@mail.com')
+    # print(a1, a2, a3)
+    # print(await get_ready_from_task(a2))
     print(await select_tasks())
     print(await select_reports())
     # print(await get_tasks_by_need_run())
