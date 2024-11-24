@@ -82,6 +82,7 @@ async def update_next_run_task():
                 update(Tasks).where(Tasks.tid == task.tid).values(ready=False, nextRun=task.nextRun + task.cycle,
                                                                   needPDF=None if task.needPDF is None else True,
                                                                   needEmail=None if task.needEmail is None else True))
+            await remove_reports_by_tid(task.tid)
             logger.debug(f"Время для {task.tid} обновлено на {task.nextRun + task.cycle}")
 
 
@@ -179,6 +180,13 @@ async def get_reports_by_tid(tid):
         return result.fetchall()
 
 
+async def remove_reports_by_tid(tid):
+    async with engine.begin() as conn:
+        await conn.execute(
+            delete(Reports).where(Reports.tid == tid)
+        )
+
+
 async def select_tasks():
     async with engine.begin() as conn:
         result = await conn.execute(
@@ -223,3 +231,5 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+
+# 138.201.80.190 80 laketc@list.ru
